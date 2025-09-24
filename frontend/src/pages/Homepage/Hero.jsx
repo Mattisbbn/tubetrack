@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 
 
-export function Hero({setPlaylists}){
+export function Hero({setPlaylists, playlists}){
   const [playlistLink, setPlaylistLink] = useState("");
 
   const handleSubmit = (e) => {
@@ -16,6 +16,12 @@ export function Hero({setPlaylists}){
       alert("Veuillez entrer un lien de playlist YouTube valide contenant le paramètre 'list='");
       return;
     }
+
+    if(playlists.some(playlist => playlist.playlistId === playlistLink.match(/[?&]list=([^&]+)/)[1])){
+      alert("Cette playlist est déjà suivie");
+      return;
+    }
+    
     const playlistIdMatch = playlistLink.match(/[?&]list=([^&]+)/);
     if (playlistIdMatch && playlistIdMatch[1]) {
       const playlistId = playlistIdMatch[1];
@@ -35,6 +41,10 @@ export function Hero({setPlaylists}){
        
         setPlaylists(updatedPlaylists);
         
+      })
+      .catch(err => {
+        const msg = err?.response?.data?.error || err?.message || "Erreur réseau";
+        alert(`Échec du chargement de la playlist: ${msg}`);
       });
       
       
@@ -73,7 +83,7 @@ export function Hero({setPlaylists}){
               </div>
 
               <button type="submit" className=" cursor-pointer w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl" onClick={handleSubmit}>
-                <span >Commencer le suivi</span>
+                Commencer le suivi
               </button>
             </form>
           </div>

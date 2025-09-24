@@ -20,7 +20,7 @@ export function Homepage() {
     <div className="bg-dark-950 text-gray-100 min-h-dvh flex flex-col">
       <Header />
       <main className="flex-1">
-        <Hero setPlaylists={setPlaylists} />
+        <Hero setPlaylists={setPlaylists} playlists={playlists} />
         <Playlists playlists={playlists} />
       </main>
 

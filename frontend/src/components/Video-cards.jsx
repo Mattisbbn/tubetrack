@@ -1,10 +1,24 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
-
+import dayjs from "dayjs";
+import duration from "dayjs/plugin/duration.js";
 
 
 
 export function VideoCard({ video, videoNumber , totalVideos }) {
+    dayjs.extend(duration);
+    const formatSecondsToTime = (totalSeconds) => {
+        const secondsNumber = Number(totalSeconds) || 0;
+        const d = dayjs.duration(secondsNumber, 'seconds');
+        const hours = Math.floor(d.asHours());
+        const minutes = d.minutes();
+        const seconds = d.seconds();
+        const pad = (n) => String(n).padStart(2, '0');
+        return hours > 0
+            ? `${hours}:${pad(minutes)}:${pad(seconds)}`
+            : `${minutes}:${pad(seconds)}`;
+    };
+
+
     return (
         <div className="flex items-start space-x-3 p-3 rounded-xl bg-purple-600/20 border border-purple-500/30 video-hover cursor-pointer">
         <div className="w-20 h-12 bg-dark-700 rounded-lg flex-shrink-0 relative overflow-hidden">
@@ -18,7 +32,7 @@ export function VideoCard({ video, videoNumber , totalVideos }) {
         
         <div className="flex-1 min-w-0">
             <h4 className="text-sm font-medium text-white line-clamp-2 mb-1" >{video.snippet.title}</h4>
-            <p className="text-xs text-gray-400 mb-1" >{videoNumber}/{totalVideos} • 45:32</p>
+            <p className="text-xs text-gray-400 mb-1" >{videoNumber}/{totalVideos} • { formatSecondsToTime(video.durationSeconds) }</p>
             {/* <span className="bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 rounded-full" >En cours</span> */}
 
          

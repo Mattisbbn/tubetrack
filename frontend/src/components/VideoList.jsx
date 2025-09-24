@@ -1,17 +1,31 @@
 import { VideoCard } from "./Video-cards";
+import { getPlaylistPercentage } from "../utils/getPlaylistPercentage";
+
+import { useState, useEffect } from "react";
+
+
+
 
 
 export function VideoList({ playlist }){
+
+    const [playlistPercentage, setPlaylistPercentage] = useState(0);
+
+    useEffect(() => {
+        setPlaylistPercentage(getPlaylistPercentage(playlist));
+    }, [playlist]);
+
+
     return (
         <div id="video-list-section" className="lg:col-span-1 section-clickable">
         <div className="bg-dark-800/50 backdrop-blur-lg rounded-2xl border border-dark-700/50 h-[800px] overflow-hidden">
             <div id="progress-section" className="p-4 border-b border-dark-700/50 section-clickable">
                 <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-white" >Progression</h3>
-                    <span className="text-slate-400 font-medium text-sm" >87%</span>
+                    <span className="text-slate-400 font-medium text-sm" >{playlistPercentage}%</span>
                 </div>
                 <div className="w-full bg-dark-700 rounded-full h-2 mb-3">
-                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style={{ width: '88%' }}></div>
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style={{ width: `${playlistPercentage}%` }}></div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
