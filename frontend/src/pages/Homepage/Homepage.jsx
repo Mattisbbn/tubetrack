@@ -17,10 +17,12 @@ export function Homepage() {
   
 
   return (
-    <div className="bg-dark-950 text-gray-100 min-h-screen">
+    <div className="bg-dark-950 text-gray-100 min-h-dvh flex flex-col">
       <Header />
-      <Hero setPlaylists={setPlaylists} />
-      <Playlists playlists={playlists} />
+      <main className="flex-1">
+        <Hero setPlaylists={setPlaylists} />
+        <Playlists playlists={playlists} />
+      </main>
 
 
 

@@ -1,6 +1,7 @@
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PlaylistCard } from "../../components/Playlist-card";
+import { Link } from "react-router-dom";
 
 export function Playlists({playlists}){
     return (
@@ -16,24 +17,24 @@ export function Playlists({playlists}){
                 Gérez et consultez toutes vos playlists en cours de suivi
               </p>
             </div>
-            <button className="bg-dark-700/50 hover:bg-dark-700 text-white px-6 py-3 rounded-xl border border-dark-600 transition-colors flex items-center space-x-2">
-              <FontAwesomeIcon icon={faPlus}/>
-              <span >Nouvelle playlist</span>
-            </button>
+            <Link to="/playlists" className="bg-dark-700/50 hover:bg-dark-700 text-white px-8 py-3 rounded-xl border border-dark-600 transition-colors flex items-center space-x-2 ">
+              Voir toutes les playlists
+              <FontAwesomeIcon className="ml-2" icon={faArrowRight}/>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {playlists.map((playlist) => (
+            { playlists.length > 0 && playlists.map((playlist) => (
               <PlaylistCard key={playlist.playlistId} percentage={23} status="Actif" playlist={playlist} />
             ))}
+
+            { playlists.length === 0 && <div className="text-center text-gray-400 col-span-3" >Aucune playlist suivie</div>}
          
           
           </div>
 
           <div className="text-center mt-12">
-            <button className="bg-dark-700/50 hover:bg-dark-700 text-white px-8 py-3 rounded-xl border border-dark-600 transition-colors">
-              Voir toutes les playlists
-            </button>
+           
           </div>
         </div>
       </section>

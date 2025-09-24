@@ -21,15 +21,19 @@ app.get("/api/playlist/:id", async (req, res) => {
   const playlistId = req.params.id;
 
   try {
-    // Inclure 'status' pour pouvoir filtrer les vidéos privées
     let playlistItemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails,status&playlistId=${playlistId}&maxResults=50&key=${API_KEY}`);
     const playlistItems = await playlistItemsRes.json();
 
     let playlistRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${playlistId}&key=${API_KEY}`);
     const playlist = await playlistRes.json();
 
-    // Filtrer les vidéos privées au niveau des items de playlist
-    const visibleItems = (playlistItems.items || []).filter(item => item?.status?.privacyStatus !== "private");
+    let visibleItems = (playlistItems.items || []).filter(item => item?.status?.privacyStatus !== "private");
+    visibleItems = visibleItems.map(item => {
+      item.watchedTimePercentage = 0;
+      item.watchedTimeSeconds = 0;
+      return item;
+    });
+    
 
     const response = {
       uuid : uuidv4(),
@@ -38,7 +42,6 @@ app.get("/api/playlist/:id", async (req, res) => {
       channelName: playlist.items[0].snippet.channelTitle,
       totalVideos: visibleItems.length,
       videos: visibleItems,
-      progressionPercentage: 0,
       activeVideoIndex: 0,
       fetchedAt: new Date().toISOString()
     }

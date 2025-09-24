@@ -11,6 +11,21 @@ export function VideoPlayer({ video, videoNumber, totalVideos }){
     const videoId = video?.snippet?.resourceId?.videoId;
     const playlistId = video?.snippet?.playlistId;
 
+    function getSavedWatchedTimeSeconds(){
+        try {
+            const playlists = localStorage.getItem('playlists');
+            if(!playlists) return 0;
+            const playlistsArray = JSON.parse(playlists);
+            const playlist = playlistsArray.find(p => p.playlistId === playlistId);
+            if(!playlist) return 0;
+            const item = playlist.videos?.[videoNumber - 1];
+            const seconds = Number(item?.watchedTimeSeconds || 0);
+            return Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+        } catch {
+            return 0;
+        }
+    }
+
     useEffect(() => {
         if (!videoId) return;
 
@@ -29,11 +44,21 @@ export function VideoPlayer({ video, videoNumber, totalVideos }){
                     playsinline: 1,
                 },
                 events: {
-                    onReady: (event) => {
-                        startLoggingTimer();
+                    onReady: (e) => {
+                        const savedSeconds = getSavedWatchedTimeSeconds();
+                        if (savedSeconds > 0) {
+                            try { e.target.seekTo(savedSeconds, true); } catch {}
+                        }
                     },
-                    onStateChange: () => {
-                        // noop
+                    onStateChange: (e) => {
+                    
+                        if(e.data === 1) {
+                            startLoggingTimer();
+                        }
+                        if(e.data === 2) {
+                            stopLoggingTimer();
+                        }
+                     
                     }
                 }
             });
@@ -51,14 +76,7 @@ export function VideoPlayer({ video, videoNumber, totalVideos }){
         } else {
             createPlayer();
         }
-
-        return () => {
-            stopLoggingTimer();
-            if (playerRef.current) {
-                try { playerRef.current.destroy(); } catch {}
-                playerRef.current = null;
-            }
-        };
+        return
     
     }, [videoId]);
 
@@ -68,14 +86,14 @@ export function VideoPlayer({ video, videoNumber, totalVideos }){
         stopLoggingTimer();
         saveTimerRef.current = window.setInterval(() => {
             const player = playerRef.current;
-            if (!player || typeof player.getCurrentTime !== 'function') return;
-            const current = Number(player.getCurrentTime() || 0);
+            const watchedTimeSeconds = Number(player.getCurrentTime() || 0);
             const duration = Number(player.getDuration() || 0);
             if (duration > 0) {
-                const percent = (current / duration) * 100;
-                updateVideoProgressInLocalStorage(playlistId, videoId, percent);
+                const watchedTimePercentage = (watchedTimeSeconds / duration) * 100;
+                saveProgress(watchedTimePercentage, watchedTimeSeconds);
+                
             }
-        }, 100);
+        }, 500);
     }
 
     function stopLoggingTimer() {
@@ -85,33 +103,19 @@ export function VideoPlayer({ video, videoNumber, totalVideos }){
         }
     }
 
-    function updateVideoProgressInLocalStorage(currentPlaylistId, currentVideoId, percent) {
-        if (!currentPlaylistId || !currentVideoId) return;
-        try {
-            const raw = localStorage.getItem('playlists');
-            if (!raw) return;
-            const playlists = JSON.parse(raw);
-            if (!Array.isArray(playlists)) return;
-
-            const playlistIndex = playlists.findIndex(p => p?.playlistId === currentPlaylistId);
-            if (playlistIndex === -1) return;
-            const playlist = playlists[playlistIndex];
-            if (!Array.isArray(playlist?.videos)) return;
-
-            const videoIndex = playlist.videos.findIndex(v =>
-                (v?.contentDetails?.videoId || v?.snippet?.resourceId?.videoId) === currentVideoId
-            );
-            if (videoIndex === -1) return;
-
-            playlist.videos[videoIndex] = {
-                ...playlist.videos[videoIndex],
-                progressionPercentage: percent
-            };
-
-            playlists[playlistIndex] = playlist;
-            localStorage.setItem('playlists', JSON.stringify(playlists));
-        } catch {}
+    function saveProgress(watchedTimePercentage, watchedTimeSeconds){
+        const playlists = localStorage.getItem('playlists');
+        if(playlists){
+            const playlistsArray = JSON.parse(playlists);
+            const playlist = playlistsArray.find(playlist => playlist.playlistId === playlistId);
+            if(playlist){
+                playlist.videos[videoNumber - 1].watchedTimePercentage = watchedTimePercentage;
+                playlist.videos[videoNumber - 1].watchedTimeSeconds = watchedTimeSeconds;
+                localStorage.setItem('playlists', JSON.stringify(playlistsArray));
+            }
+        }
     }
+ 
 
 
     return (

@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { VideoList } from "../../components/VideoList";
 import { VideoPlayer } from "../../components/VideoPlayer";
+import { Footer } from "../../components/Footer";
 
 export function ViewPlaylist(){
 
@@ -52,6 +53,7 @@ export function ViewPlaylist(){
     </div>
             
         </main>
+        <Footer/>
         </>
     )
 }

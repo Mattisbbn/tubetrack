@@ -1,5 +1,4 @@
 import { Header } from "../../components/Header";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PlaylistCard } from "../../components/Playlist-card";
 import { useEffect, useState } from "react";
 import { Footer } from "../../components/Footer";
@@ -20,8 +19,9 @@ export function Playlists(){
 
     return(
         <>
-        <main className="bg-dark-950 min-h-screen">
+        <div className="bg-dark-950 text-gray-100 min-h-dvh flex flex-col">
           <Header/>
+          <main className="flex-1">
           <section id="playlists-main" className="py-8 px-6 cursor-default-must    relative">
             <div className="max-w-7xl mx-auto">
             <div id="page-header" className="mb-8 cursor-default-must section-clickable">
@@ -84,9 +84,9 @@ export function Playlists(){
         </div>
             </div>
           </section>
-
-          <Footer/>
           </main>
+          <Footer/>
+          </div>
         
         </>
       
