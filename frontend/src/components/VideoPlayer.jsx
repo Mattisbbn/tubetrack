@@ -3,7 +3,7 @@ import { faBackwardStep, faCheck, faForwardStep } from '@fortawesome/free-solid-
 import dayjs from 'dayjs';
 import { useEffect, useRef } from 'react';
 
-export function VideoPlayer({ video, index, totalVideos }) {
+export function VideoPlayer({ video, index, totalVideos, setActiveVideo, playlist }) {
   const playerRef = useRef(null);
   const saveTimerRef = useRef(null);
 
@@ -59,7 +59,8 @@ export function VideoPlayer({ video, index, totalVideos }) {
           },
           onStateChange: (e) => {
             if (e.data === 1) {
-              startLoggingTimer();
+              const nextVideo = playlist?.videos?.[playlist?.activeVideoIndex + 1];
+              startLoggingTimer(nextVideo);
             }
             if (e.data === 2) {
               stopLoggingTimer();
@@ -84,7 +85,7 @@ export function VideoPlayer({ video, index, totalVideos }) {
     return;
   }, [videoId]);
 
-  function startLoggingTimer() {
+  function startLoggingTimer( nextVideo ) {
     stopLoggingTimer();
     saveTimerRef.current = window.setInterval(() => {
       const player = playerRef.current;
@@ -94,7 +95,13 @@ export function VideoPlayer({ video, index, totalVideos }) {
         const watchedTimePercentage = (watchedTimeSeconds / duration) * 100;
         saveProgress(watchedTimePercentage, watchedTimeSeconds);
       }
-    }, 500);
+
+      if (watchedTimeSeconds >= duration) {
+        stopLoggingTimer();
+        saveProgress(100, duration);
+        setActiveVideo(nextVideo);
+      }
+    }, 200);
   }
 
   function stopLoggingTimer() {
@@ -109,9 +116,16 @@ export function VideoPlayer({ video, index, totalVideos }) {
     if (playlists) {
       const playlistsArray = JSON.parse(playlists);
       const playlist = playlistsArray.find((playlist) => playlist.playlistId === playlistId);
-      if (playlist) {
+      if (playlist && playlist.videos && playlist.videos[index]) {
         playlist.videos[index].watchedTimePercentage = watchedTimePercentage;
         playlist.videos[index].watchedTimeSeconds = watchedTimeSeconds;
+        if (watchedTimePercentage === 100) {
+          playlist.videos[index].status = "seen";
+        }
+        if (watchedTimePercentage < 100) {
+          playlist.videos[index].status = "in_progress";
+        }
+      
         localStorage.setItem('playlists', JSON.stringify(playlistsArray));
       }
     }

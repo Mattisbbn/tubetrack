@@ -74,6 +74,7 @@ app.get("/api/playlist/:id", async (req, res) => {
     visibleItems = visibleItems.map(item => {
       item.watchedTimePercentage = 0;
       item.watchedTimeSeconds = 0;
+      item.status = "not_seen";
       return item;
     });
 

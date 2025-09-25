@@ -20,7 +20,7 @@ export function VideoList({ playlist, setActiveVideo }) {
           </div>
           <div className="w-full bg-dark-700 rounded-full h-2 mb-3">
             <div
-              className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full"
+              className="bg-blue-400 h-2 rounded-full"
               style={{ width: `${playlistPercentage}%` }}></div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">

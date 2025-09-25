@@ -26,25 +26,46 @@ export function ViewPlaylist() {
     }
   }, [playlist]);
 
+  // Écouter les changements dans le localStorage pour mettre à jour la playlist
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const playlistItems = localStorage.getItem('playlists');
+      if (playlistItems) {
+        const updatedPlaylist = JSON.parse(playlistItems).find((p) => p.uuid === playlistId);
+        if (updatedPlaylist) {
+          setPlaylist(updatedPlaylist);
+        }
+      }
+    };
+
+    // Écouter les changements de localStorage
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier périodiquement les changements (pour les changements dans le même onglet)
+    const interval = setInterval(handleStorageChange, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [playlistId]);
+
   const handleVideoChange = (video) => {
     if (playlist) {
       const videoIndex = playlist.videos.findIndex(v => v.id === video.id);
       if (videoIndex !== -1) {
-        // Mettre à jour l'index dans la playlist
+
         const updatedPlaylist = {
           ...playlist,
           activeVideoIndex: videoIndex
         };
         
-        // Sauvegarder dans localStorage
         const playlists = JSON.parse(localStorage.getItem('playlists') || '[]');
         const playlistIndex = playlists.findIndex(p => p.uuid === playlistId);
         if (playlistIndex !== -1) {
           playlists[playlistIndex] = updatedPlaylist;
           localStorage.setItem('playlists', JSON.stringify(playlists));
         }
-        
-        // Mettre à jour l'état local
         setPlaylist(updatedPlaylist);
         setActiveVideo(video);
       }
@@ -71,9 +92,12 @@ export function ViewPlaylist() {
                 video={activeVideo}
                 index={playlist.activeVideoIndex}
                 totalVideos={playlist.totalVideos}
+                setActiveVideo={handleVideoChange}
+                playlist={playlist}
+                setPlaylist={setPlaylist}
               />
             )}
-            {playlist && <VideoList playlist={playlist} setActiveVideo={handleVideoChange} />}
+            {playlist && <VideoList playlist={playlist} setActiveVideo={handleVideoChange} setPlaylist={setPlaylist} />}
           </div>
         </div>
       </main>
