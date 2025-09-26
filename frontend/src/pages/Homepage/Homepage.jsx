@@ -1,20 +1,18 @@
-import { useState, useEffect } from "react";
-import { Header } from "../../components/Header";
-import { Footer } from "../../components/Footer";
-import { Hero } from "./Hero";
-import { Playlists } from "./Playlists";
+import { useState, useEffect } from 'react';
+import { Header } from '../../components/Header';
+import { Footer } from '../../components/Footer';
+import { Hero } from './Hero';
+import { Playlists } from './Playlists';
 
 export function Homepage() {
-
   const [playlists, setPlaylists] = useState([]);
 
   useEffect(() => {
-    const playlistItems = localStorage.getItem("playlists");
-    if(playlistItems){
+    const playlistItems = localStorage.getItem('playlists');
+    if (playlistItems) {
       setPlaylists(JSON.parse(playlistItems));
     }
   }, []);
-  
 
   return (
     <div className="bg-dark-950 text-gray-100 min-h-dvh flex flex-col">
@@ -24,10 +22,7 @@ export function Homepage() {
         <Playlists playlists={playlists} />
       </main>
 
-
-
-
-{/*       
+      {/*       
       <section id="cta-section" className="py-20 px-6 cursor-default-must">
         <div className="max-w-4xl mx-auto text-center">
           <h3
@@ -48,7 +43,6 @@ export function Homepage() {
           </button>
         </div>
       </section> */}
-
 
       <Footer />
     </div>

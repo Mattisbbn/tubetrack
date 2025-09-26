@@ -32,7 +32,7 @@ export function ViewPlaylist() {
       try {
         const { playlistId } = e.detail || {};
         if (!playlistId || playlistId !== playlist?.playlistId) return;
-        
+
         // Recharger la playlist depuis le localStorage pour avoir les données à jour
         const playlists = JSON.parse(localStorage.getItem('playlists') || '[]');
         const updatedPlaylist = playlists.find((p) => p.playlistId === playlist?.playlistId);
@@ -96,7 +96,6 @@ export function ViewPlaylist() {
                 setActiveVideo={handleVideoChange}
                 playlist={playlist}
                 setPlaylist={setPlaylist}
-
               />
             )}
             {playlist && <VideoList playlist={playlist} setActiveVideo={handleVideoChange} />}

@@ -25,12 +25,10 @@ function VideoPlayerBase({ video, index, totalVideos, setActiveVideo, playlist, 
     }
   }
 
-  
-
   useEffect(() => {
     if (!videoId) return;
 
-    let hasSeeked = false
+    let hasSeeked = false;
 
     function createPlayer() {
       if (playerRef.current) {
@@ -57,21 +55,16 @@ function VideoPlayerBase({ video, index, totalVideos, setActiveVideo, playlist, 
                 e.target.seekTo(savedSeconds, true);
               } catch {}
             }
-          
-          
           },
           onStateChange: (e) => {
             if (e.data === 1) {
               const nextVideo = playlist?.videos?.[playlist?.activeVideoIndex + 1];
-              startLoggingTimer(nextVideo)
-        
-              
-              
+              startLoggingTimer(nextVideo);
 
-                // if(!hasSeeked){
-                //   e.target.pauseVideo();
-                // }
-                // hasSeeked = true
+              // if(!hasSeeked){
+              //   e.target.pauseVideo();
+              // }
+              // hasSeeked = true
             }
             if (e.data === 2) {
               stopLoggingTimer();
@@ -94,16 +87,18 @@ function VideoPlayerBase({ video, index, totalVideos, setActiveVideo, playlist, 
       createPlayer();
     }
     return () => {
-      stopLoggingTimer()
-   
+      stopLoggingTimer();
+
       if (playerRef.current) {
-        try { playerRef.current.destroy(); } catch {}
+        try {
+          playerRef.current.destroy();
+        } catch {}
         playerRef.current = null;
       }
     };
   }, [videoId]);
 
-  function startLoggingTimer( nextVideo ) {
+  function startLoggingTimer(nextVideo) {
     stopLoggingTimer();
     saveTimerRef.current = window.setInterval(() => {
       const player = playerRef.current;
@@ -114,12 +109,11 @@ function VideoPlayerBase({ video, index, totalVideos, setActiveVideo, playlist, 
         const watchedTimePercentage = (watchedTimeSeconds / duration) * 100;
         saveProgress(watchedTimePercentage, watchedTimeSeconds);
       }
-      
+
       if (Math.round(watchedTimeSeconds) >= duration) {
         stopLoggingTimer();
         saveProgress(100, duration);
         setActiveVideo(nextVideo);
-        
       }
     }, 200);
   }
@@ -142,10 +136,10 @@ function VideoPlayerBase({ video, index, totalVideos, setActiveVideo, playlist, 
         foundPlaylistInStorage.videos[index].watchedTimePercentage = watchedTimePercentage;
         foundPlaylistInStorage.videos[index].watchedTimeSeconds = watchedTimeSeconds;
         if (watchedTimePercentage === 100) {
-          foundPlaylistInStorage.videos[index].status = "seen";
+          foundPlaylistInStorage.videos[index].status = 'seen';
         }
         if (watchedTimePercentage < 100) {
-          foundPlaylistInStorage.videos[index].status = "in_progress";
+          foundPlaylistInStorage.videos[index].status = 'in_progress';
         }
 
         localStorage.setItem('playlists', JSON.stringify(playlistsArray));
@@ -154,7 +148,7 @@ function VideoPlayerBase({ video, index, totalVideos, setActiveVideo, playlist, 
           window.dispatchEvent(
             new CustomEvent('playlist-progress', {
               detail: { playlistId, index, watchedTimeSeconds, watchedTimePercentage },
-            })
+            }),
           );
         } catch {}
       }
@@ -195,21 +189,17 @@ function VideoPlayerBase({ video, index, totalVideos, setActiveVideo, playlist, 
   );
 }
 
+export const VideoPlayer = React.memo(VideoPlayerBase, (prevProps, nextProps) => {
+  const prevVideoId = prevProps.video?.id || prevProps.video?.snippet?.resourceId?.videoId;
+  const nextVideoId = nextProps.video?.id || nextProps.video?.snippet?.resourceId?.videoId;
 
-export const VideoPlayer = React.memo(
-  VideoPlayerBase,
-  (prevProps, nextProps) => {
-    const prevVideoId = prevProps.video?.id || prevProps.video?.snippet?.resourceId?.videoId;
-    const nextVideoId = nextProps.video?.id || nextProps.video?.snippet?.resourceId?.videoId;
+  const prevPlaylistKey = `${prevProps.playlist?.uuid}-${prevProps.playlist?.activeVideoIndex}-${prevProps.playlist?.videos?.length}`;
+  const nextPlaylistKey = `${nextProps.playlist?.uuid}-${nextProps.playlist?.activeVideoIndex}-${nextProps.playlist?.videos?.length}`;
 
-    const prevPlaylistKey = `${prevProps.playlist?.uuid}-${prevProps.playlist?.activeVideoIndex}-${prevProps.playlist?.videos?.length}`;
-    const nextPlaylistKey = `${nextProps.playlist?.uuid}-${nextProps.playlist?.activeVideoIndex}-${nextProps.playlist?.videos?.length}`;
-
-    return (
-      prevVideoId === nextVideoId &&
-      prevProps.index === nextProps.index &&
-      prevProps.totalVideos === nextProps.totalVideos &&
-      prevPlaylistKey === nextPlaylistKey
-    );
-  }
-);
+  return (
+    prevVideoId === nextVideoId &&
+    prevProps.index === nextProps.index &&
+    prevProps.totalVideos === nextProps.totalVideos &&
+    prevPlaylistKey === nextPlaylistKey
+  );
+});
