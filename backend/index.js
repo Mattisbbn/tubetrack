@@ -5,17 +5,16 @@ import dotenv from "dotenv";
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration.js";
+import sanitizeHtml from 'sanitize-html';
 
 const env = dotenv.config().parsed;
 const app = express();
+const API_KEY = env.API_KEY;
 
 app.use(cors());
 app.use(express.json());
 
-// Activer le plugin duration pour dayjs
 dayjs.extend(duration);
-
-const API_KEY = env.API_KEY;
 
 
 
@@ -44,20 +43,28 @@ async function fetchVideosDurationsSeconds(videoIds) {
   return idToSeconds;
 }
 
+async function fetchPlaylist(playlistId){
+  let res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails,status&playlistId=${playlistId}&maxResults=50&key=${API_KEY}`);
+  return await res.json();
+}
+
+async function fetchPlaylistItems(playlistId){
+  let res = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${playlistId}&key=${API_KEY}`);
+  return await res.json();
+}
 
 app.get("/api/playlist/:id", async (req, res) => {
-  const playlistId = req.params.id;
+  let  playlistId = req.params.id;
+
+  playlistId = sanitizeHtml(playlistId);
 
   try {
     if (!API_KEY) {
       return res.status(500).json({ error: "API key manquante côté serveur" });
     }
 
-    let playlistItemsRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails,status&playlistId=${playlistId}&maxResults=50&key=${API_KEY}`);
-    const playlistItems = await playlistItemsRes.json();
-
-    let playlistRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${playlistId}&key=${API_KEY}`);
-    const playlist = await playlistRes.json();
+    const playlist = fetchPlaylist(playlistId)
+    const playlistItems = fetchPlaylistItems(playlistId)
 
     if (playlistItems?.error || playlist?.error) {
       return res.status(400).json({
@@ -71,6 +78,7 @@ app.get("/api/playlist/:id", async (req, res) => {
     }
 
     let visibleItems = (playlistItems.items || []).filter(item => item?.status?.privacyStatus !== "private");
+
     visibleItems = visibleItems.map(item => {
       item.watchedTimePercentage = 0;
       item.watchedTimeSeconds = 0;
@@ -78,8 +86,10 @@ app.get("/api/playlist/:id", async (req, res) => {
       return item;
     });
 
-    const videoIds = visibleItems.map(i => i?.contentDetails?.videoId).filter(Boolean);
+    const videoIds = visibleItems.map(i => i?.contentDetails?.videoId).filter(Boolean); // Filtre toutes les videos qui n'on pas de contentdetails / videoID
+
     const idToDurationSeconds = await fetchVideosDurationsSeconds(videoIds);
+
     let totalDurationSeconds = 0;
     visibleItems = visibleItems.map(item => {
       const vid = item?.contentDetails?.videoId;
@@ -99,6 +109,7 @@ app.get("/api/playlist/:id", async (req, res) => {
       totalDurationSeconds,
       videos: visibleItems,
       activeVideoIndex: 0,
+      overallProgressPercentage:0,
       fetchedAt: new Date().toISOString()
     }
 

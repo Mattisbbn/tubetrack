@@ -12,56 +12,57 @@ export function ViewPlaylist() {
   const [playlist, setPlaylist] = useState(null);
   const [activeVideo, setActiveVideo] = useState(null);
   const { playlistId } = useParams();
-  
+
   useEffect(() => {
     const playlistItems = localStorage.getItem('playlists');
     if (playlistItems) {
       setPlaylist(JSON.parse(playlistItems).find((playlist) => playlist.uuid === playlistId));
     }
   }, [playlistId]);
-  
+
   useEffect(() => {
-    if (playlist) {
+    if (playlist && Number.isInteger(playlist.activeVideoIndex)) {
       setActiveVideo(playlist.videos[playlist.activeVideoIndex]);
     }
-  }, [playlist]);
+  }, [playlist?.activeVideoIndex, playlist?.uuid]);
 
-  // Écouter les changements dans le localStorage pour mettre à jour la playlist
+  // Écouter les événements de progression pour mettre à jour le state
   useEffect(() => {
-    const handleStorageChange = () => {
-      const playlistItems = localStorage.getItem('playlists');
-      if (playlistItems) {
-        const updatedPlaylist = JSON.parse(playlistItems).find((p) => p.uuid === playlistId);
+    function handleProgress(e) {
+      try {
+        const { playlistId } = e.detail || {};
+        if (!playlistId || playlistId !== playlist?.playlistId) return;
+        
+        // Recharger la playlist depuis le localStorage pour avoir les données à jour
+        const playlists = JSON.parse(localStorage.getItem('playlists') || '[]');
+        const updatedPlaylist = playlists.find((p) => p.playlistId === playlist?.playlistId);
         if (updatedPlaylist) {
           setPlaylist(updatedPlaylist);
+          // Mettre à jour la vidéo active si nécessaire
+          if (Number.isInteger(updatedPlaylist.activeVideoIndex)) {
+            setActiveVideo(updatedPlaylist.videos[updatedPlaylist.activeVideoIndex]);
+          }
         }
+      } catch (error) {
+        console.error('Erreur lors de la mise à jour de la progression:', error);
       }
-    };
+    }
 
-    // Écouter les changements de localStorage
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Vérifier périodiquement les changements (pour les changements dans le même onglet)
-    const interval = setInterval(handleStorageChange, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [playlistId]);
+    window.addEventListener('playlist-progress', handleProgress);
+    return () => window.removeEventListener('playlist-progress', handleProgress);
+  }, [playlist?.playlistId]);
 
   const handleVideoChange = (video) => {
     if (playlist) {
-      const videoIndex = playlist.videos.findIndex(v => v.id === video.id);
+      const videoIndex = playlist.videos.findIndex((v) => v.id === video.id);
       if (videoIndex !== -1) {
-
         const updatedPlaylist = {
           ...playlist,
-          activeVideoIndex: videoIndex
+          activeVideoIndex: videoIndex,
         };
-        
+
         const playlists = JSON.parse(localStorage.getItem('playlists') || '[]');
-        const playlistIndex = playlists.findIndex(p => p.uuid === playlistId);
+        const playlistIndex = playlists.findIndex((p) => p.uuid === playlistId);
         if (playlistIndex !== -1) {
           playlists[playlistIndex] = updatedPlaylist;
           localStorage.setItem('playlists', JSON.stringify(playlists));
@@ -95,9 +96,10 @@ export function ViewPlaylist() {
                 setActiveVideo={handleVideoChange}
                 playlist={playlist}
                 setPlaylist={setPlaylist}
+
               />
             )}
-            {playlist && <VideoList playlist={playlist} setActiveVideo={handleVideoChange} setPlaylist={setPlaylist} />}
+            {playlist && <VideoList playlist={playlist} setActiveVideo={handleVideoChange} />}
           </div>
         </div>
       </main>

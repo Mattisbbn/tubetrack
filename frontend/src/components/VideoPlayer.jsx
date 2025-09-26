@@ -1,9 +1,9 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBackwardStep, faCheck, faForwardStep } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-export function VideoPlayer({ video, index, totalVideos, setActiveVideo, playlist }) {
+function VideoPlayerBase({ video, index, totalVideos, setActiveVideo, playlist, setPlaylist }) {
   const playerRef = useRef(null);
   const saveTimerRef = useRef(null);
 
@@ -25,8 +25,12 @@ export function VideoPlayer({ video, index, totalVideos, setActiveVideo, playlis
     }
   }
 
+  
+
   useEffect(() => {
     if (!videoId) return;
+
+    let hasSeeked = false
 
     function createPlayer() {
       if (playerRef.current) {
@@ -53,14 +57,21 @@ export function VideoPlayer({ video, index, totalVideos, setActiveVideo, playlis
                 e.target.seekTo(savedSeconds, true);
               } catch {}
             }
-            try {
-              e.target.pauseVideo();
-            } catch {}
+          
+          
           },
           onStateChange: (e) => {
             if (e.data === 1) {
               const nextVideo = playlist?.videos?.[playlist?.activeVideoIndex + 1];
-              startLoggingTimer(nextVideo);
+              startLoggingTimer(nextVideo)
+        
+              
+              
+
+                // if(!hasSeeked){
+                //   e.target.pauseVideo();
+                // }
+                // hasSeeked = true
             }
             if (e.data === 2) {
               stopLoggingTimer();
@@ -82,24 +93,33 @@ export function VideoPlayer({ video, index, totalVideos, setActiveVideo, playlis
     } else {
       createPlayer();
     }
-    return;
+    return () => {
+      stopLoggingTimer()
+   
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch {}
+        playerRef.current = null;
+      }
+    };
   }, [videoId]);
 
   function startLoggingTimer( nextVideo ) {
     stopLoggingTimer();
     saveTimerRef.current = window.setInterval(() => {
       const player = playerRef.current;
+      if (!player || typeof player.getCurrentTime !== 'function' || typeof player.getDuration !== 'function') return;
       const watchedTimeSeconds = Number(player.getCurrentTime() || 0);
       const duration = Number(player.getDuration() || 0);
       if (duration > 0) {
         const watchedTimePercentage = (watchedTimeSeconds / duration) * 100;
         saveProgress(watchedTimePercentage, watchedTimeSeconds);
       }
-
-      if (watchedTimeSeconds >= duration) {
+      
+      if (Math.round(watchedTimeSeconds) >= duration) {
         stopLoggingTimer();
         saveProgress(100, duration);
         setActiveVideo(nextVideo);
+        
       }
     }, 200);
   }
@@ -112,21 +132,31 @@ export function VideoPlayer({ video, index, totalVideos, setActiveVideo, playlis
   }
 
   function saveProgress(watchedTimePercentage, watchedTimeSeconds) {
+    watchedTimePercentage = Math.min(100, Math.max(0, Math.round(watchedTimePercentage)));
+    watchedTimeSeconds = Math.max(0, Math.round(watchedTimeSeconds));
     const playlists = localStorage.getItem('playlists');
     if (playlists) {
       const playlistsArray = JSON.parse(playlists);
-      const playlist = playlistsArray.find((playlist) => playlist.playlistId === playlistId);
-      if (playlist && playlist.videos && playlist.videos[index]) {
-        playlist.videos[index].watchedTimePercentage = watchedTimePercentage;
-        playlist.videos[index].watchedTimeSeconds = watchedTimeSeconds;
+      const foundPlaylistInStorage = playlistsArray.find((p) => p.playlistId === playlistId);
+      if (foundPlaylistInStorage && foundPlaylistInStorage.videos && foundPlaylistInStorage.videos[index]) {
+        foundPlaylistInStorage.videos[index].watchedTimePercentage = watchedTimePercentage;
+        foundPlaylistInStorage.videos[index].watchedTimeSeconds = watchedTimeSeconds;
         if (watchedTimePercentage === 100) {
-          playlist.videos[index].status = "seen";
+          foundPlaylistInStorage.videos[index].status = "seen";
         }
         if (watchedTimePercentage < 100) {
-          playlist.videos[index].status = "in_progress";
+          foundPlaylistInStorage.videos[index].status = "in_progress";
         }
-      
+
         localStorage.setItem('playlists', JSON.stringify(playlistsArray));
+
+        try {
+          window.dispatchEvent(
+            new CustomEvent('playlist-progress', {
+              detail: { playlistId, index, watchedTimeSeconds, watchedTimePercentage },
+            })
+          );
+        } catch {}
       }
     }
   }
@@ -143,7 +173,7 @@ export function VideoPlayer({ video, index, totalVideos, setActiveVideo, playlis
             Vidéo {index + 1} sur {totalVideos} • Ajoutée {dayjs(video?.snippet?.publishedAt).fromNow()}
           </p>
 
-          <div className="flex items-center justify-between">
+          {/* <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors flex items-center space-x-2">
                 <FontAwesomeIcon icon={faBackwardStep} />
@@ -158,9 +188,28 @@ export function VideoPlayer({ video, index, totalVideos, setActiveVideo, playlis
                 <FontAwesomeIcon icon={faForwardStep} />
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
   );
 }
+
+
+export const VideoPlayer = React.memo(
+  VideoPlayerBase,
+  (prevProps, nextProps) => {
+    const prevVideoId = prevProps.video?.id || prevProps.video?.snippet?.resourceId?.videoId;
+    const nextVideoId = nextProps.video?.id || nextProps.video?.snippet?.resourceId?.videoId;
+
+    const prevPlaylistKey = `${prevProps.playlist?.uuid}-${prevProps.playlist?.activeVideoIndex}-${prevProps.playlist?.videos?.length}`;
+    const nextPlaylistKey = `${nextProps.playlist?.uuid}-${nextProps.playlist?.activeVideoIndex}-${nextProps.playlist?.videos?.length}`;
+
+    return (
+      prevVideoId === nextVideoId &&
+      prevProps.index === nextProps.index &&
+      prevProps.totalVideos === nextProps.totalVideos &&
+      prevPlaylistKey === nextPlaylistKey
+    );
+  }
+);

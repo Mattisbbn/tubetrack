@@ -37,12 +37,12 @@ export function PlaylistCard({ playlist }) {
       <div className="space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">Progression</span>
-          <span className="text-slate-400">10%</span>
+          <span className="text-slate-400">{playlist.overallProgressPercentage || 0}%</span>
         </div>
         <div className="w-full bg-dark-700 rounded-full h-2">
           <div
             className="bg-slate-500 h-2 rounded-full"
-            style={{ width: `10%` }}
+            style={{ width: `${playlist.overallProgressPercentage || 0}%` }}
           ></div>
         </div>
       </div>

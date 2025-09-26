@@ -1,15 +1,52 @@
 import { VideoCard } from './Video-cards';
 import { getPlaylistPercentage } from '../utils/getPlaylistPercentage';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 export function VideoList({ playlist, setActiveVideo }) {
   const [playlistPercentage, setPlaylistPercentage] = useState(0);
 
   useEffect(() => {
     setPlaylistPercentage(getPlaylistPercentage(playlist));
+
   }, [playlist]);
 
+
+  const savePlaylistPercentage = (percentage) => {
+    setPlaylistPercentage(percentage);
+    const playlists = JSON.parse(localStorage.getItem('playlists') || '[]');
+    const found = playlists.find((p) => p.playlistId === playlist?.playlistId);
+    if (found) {
+      found.overallProgressPercentage = percentage;
+      localStorage.setItem('playlists', JSON.stringify(playlists));
+    }
+  }
+
+  useEffect(() => {
+    function handleProgress(e) {
+      try {
+        const { playlistId } = e.detail || {};
+        if (!playlistId || playlistId !== playlist?.playlistId) return;
+        const playlists = JSON.parse(localStorage.getItem('playlists') || '[]');
+        const found = playlists.find((p) => p.playlistId === playlist?.playlistId);
+        if (found) {
+          savePlaylistPercentage(getPlaylistPercentage(found));
+        }
+      } catch {}
+    }
+
+    window.addEventListener('playlist-progress', handleProgress);
+    return () => window.removeEventListener('playlist-progress', handleProgress);
+  }, [playlist?.playlistId]);
+
+  const videos = useMemo(() => {
+    return [...(playlist?.videos || [])].sort(
+      (a, b) => new Date(a.snippet.publishedAt) - new Date(b.snippet.publishedAt)
+    );
+  }, [playlist?.videos, playlist?.videos]);
+
+
+  
   return (
     <div id="video-list-section" className="lg:col-span-1 section-clickable">
       <div className="bg-dark-800/50 backdrop-blur-lg rounded-2xl border border-dark-700/50 h-[800px] overflow-hidden">
@@ -25,11 +62,11 @@ export function VideoList({ playlist, setActiveVideo }) {
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <div className="text-lg font-bold text-emerald-400">0</div>
+              <div className="text-lg font-bold text-emerald-400">{ playlist.videos.filter((video) => video.status === "seen").length}</div>
               <div className="text-xs text-gray-400">Vues</div>
             </div>
             <div>
-              <div className="text-lg font-bold text-blue-400">0</div>
+              <div className="text-lg font-bold text-blue-400">{playlist.totalVideos - playlist.videos.filter((video) => video.status === "seen").length}</div>
               <div className="text-xs text-gray-400">Restantes</div>
             </div>
             <div>
@@ -42,11 +79,11 @@ export function VideoList({ playlist, setActiveVideo }) {
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">Liste des vidéos</h3>
-            <select className="bg-dark-700/50 border border-dark-600 rounded-xl px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-slate-500">
+            {/* <select className="bg-dark-700/50 border border-dark-600 rounded-xl px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-slate-500">
               <option>Toutes</option>
               <option>Non vues</option>
               <option>Vues</option>
-            </select>
+            </select> */}
           </div>
 
           <div
@@ -54,14 +91,13 @@ export function VideoList({ playlist, setActiveVideo }) {
             className="space-y-3 overflow-y-auto scrollbar-hide section-clickable"
             style={{ height: '550px' }}>
             {playlist &&
-              playlist.videos
-                .sort((a, b) => new Date(a.snippet.publishedAt) - new Date(b.snippet.publishedAt))
+              videos
                 .map((video) => (
                   <VideoCard
-                    key={video.id}
+                    key={video.contentDetails.videoId}
                     video={video}
-                    isActive={playlist.activeVideoIndex === playlist.videos.indexOf(video)}
-                    index={playlist.videos.indexOf(video)}
+                    isActive={playlist.activeVideoIndex === videos.indexOf(video)}
+                    index={videos.indexOf(video)}
                     totalVideos={playlist.totalVideos}
                     setActiveVideo={setActiveVideo}
                   />

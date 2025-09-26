@@ -1,8 +1,11 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowsRotate, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import { faArrowsRotate, faEllipsisV, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
 
 
 export function PlaylistHeader({ playlist }) {
+    const navigate = useNavigate();
+            
     return (
         <div id="playlist-header" className="mb-8 section-clickable">
         <div className="flex items-start justify-between mb-6">
@@ -17,12 +20,22 @@ export function PlaylistHeader({ playlist }) {
                 </div>
             </div>
             <div className="flex items-center space-x-3">
-                <button className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors">
+                {/* <button className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors" >
                     <FontAwesomeIcon icon={faArrowsRotate} />
-                </button>
+                </button> */}
                 <button className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors">
                    <FontAwesomeIcon icon={faEllipsisV} />
                 </button>
+               <button className="bg-red-500/70 hover:bg-red-500/90 text-white px-4 py-2 rounded-xl transition-colors" onClick={() => {
+                const playlists = JSON.parse(localStorage.getItem('playlists'));
+                const newPlaylists = playlists.filter((p) => p.playlistId !== playlist.playlistId);
+                localStorage.setItem('playlists', JSON.stringify(newPlaylists));
+
+                navigate('/playlists');
+                
+               }}>
+                    <FontAwesomeIcon icon={faTrash} />
+               </button>
             </div>
         </div>
     </div>
