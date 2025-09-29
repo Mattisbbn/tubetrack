@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate, faEllipsisV, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 export function PlaylistHeader({ playlist }) {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export function PlaylistHeader({ playlist }) {
           <div>
             <h2 className="text-4xl font-bold text-white mb-2">{playlist.playlistName}</h2>
             <p className="text-gray-400 mb-2">
-              Par {playlist.channelName} • {playlist.totalVideos} vidéos
+              Par {playlist.channelName} • {playlist.totalVideos} vidéos • {dayjs.duration(playlist.totalDurationSeconds * 1000).format('HH:mm:ss')}
             </p>
           </div>
         </div>
