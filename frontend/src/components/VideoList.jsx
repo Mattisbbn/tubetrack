@@ -93,7 +93,7 @@ export function VideoList({ playlist, setActiveVideo }) {
                 <VideoCard
                   key={video.contentDetails.videoId}
                   video={video}
-                  isActive={playlist.activeVideoIndex === videos.indexOf(video)}
+                  isActive={playlist.videos[playlist.activeVideoIndex]?.id === video.id}
                   index={videos.indexOf(video)}
                   totalVideos={playlist.totalVideos}
                   setActiveVideo={setActiveVideo}
